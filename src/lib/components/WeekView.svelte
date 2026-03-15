@@ -5,23 +5,38 @@
 	import type { Meal, Recipe } from '$lib/types';
 	
 	interface Props {
-		meals: Meal[];
+		meals?: Meal[];
 		recipes?: Recipe[];
 	}
 	
-	let { meals, recipes = [] }: Props = $props();
+	let { meals = [], recipes = [] }: Props = $props();
 	
 	const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 	
 	let selectedDayIndex = $state<number | null>(null);
 	let isModalOpen = $state(false);
 	
+	// Track selected meals for each day (dayIndex -> recipeId)
+	let selectedMeals = $state<Record<number, string>>({});
+	
 	let selectedDayName = $derived(
 		selectedDayIndex !== null ? days[selectedDayIndex] : ''
 	);
 	
-	function getMealForDay(dayIndex: number): Meal | undefined {
-		return meals.find(m => m.day_of_week === dayIndex);
+	// Map of recipeId -> recipe name for display
+	let recipeMap = $derived(
+		recipes.reduce((map, recipe) => {
+			map[recipe.id] = recipe.name;
+			return map;
+		}, {} as Record<string, string>)
+	);
+	
+	function getMealNameForDay(dayIndex: number): string | undefined {
+		const recipeId = selectedMeals[dayIndex];
+		if (recipeId) {
+			return recipeMap[recipeId] || 'Loading...';
+		}
+		return undefined;
 	}
 	
 	function handleDaySelect(dayIndex: number) {
@@ -35,8 +50,9 @@
 	}
 	
 	function handleRecipeSelect(recipe: Recipe) {
-		console.log('Selected recipe:', recipe.name, 'for day:', selectedDayName);
-		// TODO: Save meal selection to database
+		if (selectedDayIndex !== null) {
+			selectedMeals[selectedDayIndex] = recipe.id;
+		}
 		handleCloseModal();
 	}
 	
@@ -63,7 +79,7 @@
 		{#each days as day, index}
 			<DayCard 
 				{day} 
-				meal={getMealForDay(index)}
+				mealName={getMealNameForDay(index)}
 				onSelect={() => handleDaySelect(index)}
 			/>
 		{/each}

@@ -4,16 +4,17 @@
 	interface Props {
 		day: string;
 		meal?: Meal;
+		mealName?: string;
 		onSelect: () => void;
 	}
 	
-	let { day, meal, onSelect }: Props = $props();
+	let { day, meal, mealName, onSelect }: Props = $props();
 </script>
 
 <button class="day-card" onclick={onSelect}>
 	<div class="day-name">{day}</div>
-	{#if meal}
-		<div class="meal-name">{meal.recipe_id}</div>
+	{#if mealName}
+		<div class="meal-name">{mealName}</div>
 	{:else}
 		<div class="empty">
 			<span class="add-icon">+</span>
