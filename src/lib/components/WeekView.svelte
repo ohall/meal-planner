@@ -23,9 +23,20 @@
 		selectedDayIndex !== null ? days[selectedDayIndex] : ''
 	);
 	
+	// Temporary mock recipes for testing
+	const mockRecipes: Recipe[] = [
+		{ id: '1', household_id: '1', name: 'Spaghetti Carbonara', prep_time: 10, cook_time: 20, is_favorite: true, ingredients: [], created_at: '', updated_at: '' },
+		{ id: '2', household_id: '1', name: 'Grilled Chicken Salad', prep_time: 15, cook_time: 15, is_favorite: false, ingredients: [], created_at: '', updated_at: '' },
+		{ id: '3', household_id: '1', name: 'Beef Tacos', prep_time: 10, cook_time: 25, is_favorite: true, ingredients: [], created_at: '', updated_at: '' },
+		{ id: '4', household_id: '1', name: 'Vegetable Stir Fry', prep_time: 10, cook_time: 15, is_favorite: false, ingredients: [], created_at: '', updated_at: '' },
+		{ id: '5', household_id: '1', name: 'Homemade Pizza', prep_time: 30, cook_time: 20, is_favorite: true, ingredients: [], created_at: '', updated_at: '' },
+	];
+	
+	let displayRecipes = $derived(recipes.length > 0 ? recipes : mockRecipes);
+	
 	// Map of recipeId -> recipe name for display
 	let recipeMap = $derived(
-		recipes.reduce((map, recipe) => {
+		displayRecipes.reduce((map, recipe) => {
 			map[recipe.id] = recipe.name;
 			return map;
 		}, {} as Record<string, string>)
@@ -60,17 +71,6 @@
 		console.log('Generate suggestions for day:', selectedDayName);
 		// TODO: Call API/LLM to generate suggestions
 	}
-	
-	// Temporary mock recipes for testing
-	const mockRecipes: Recipe[] = [
-		{ id: '1', household_id: '1', name: 'Spaghetti Carbonara', prep_time: 10, cook_time: 20, is_favorite: true, ingredients: [], created_at: '', updated_at: '' },
-		{ id: '2', household_id: '1', name: 'Grilled Chicken Salad', prep_time: 15, cook_time: 15, is_favorite: false, ingredients: [], created_at: '', updated_at: '' },
-		{ id: '3', household_id: '1', name: 'Beef Tacos', prep_time: 10, cook_time: 25, is_favorite: true, ingredients: [], created_at: '', updated_at: '' },
-		{ id: '4', household_id: '1', name: 'Vegetable Stir Fry', prep_time: 10, cook_time: 15, is_favorite: false, ingredients: [], created_at: '', updated_at: '' },
-		{ id: '5', household_id: '1', name: 'Homemade Pizza', prep_time: 30, cook_time: 20, is_favorite: true, ingredients: [], created_at: '', updated_at: '' },
-	];
-	
-	let displayRecipes = $derived(recipes.length > 0 ? recipes : mockRecipes);
 </script>
 
 <div class="week-view">
