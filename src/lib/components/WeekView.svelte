@@ -1,23 +1,60 @@
 <script lang="ts">
 	import DayCard from './DayCard.svelte';
-	import type { Meal } from '$lib/types';
+	import Modal from './Modal.svelte';
+	import MealSelector from './MealSelector.svelte';
+	import type { Meal, Recipe } from '$lib/types';
 	
 	interface Props {
 		meals: Meal[];
+		recipes?: Recipe[];
 	}
 	
-	let { meals }: Props = $props();
+	let { meals, recipes = [] }: Props = $props();
 	
-	const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+	const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+	
+	let selectedDayIndex = $state<number | null>(null);
+	let isModalOpen = $state(false);
+	
+	let selectedDayName = $derived(
+		selectedDayIndex !== null ? days[selectedDayIndex] : ''
+	);
 	
 	function getMealForDay(dayIndex: number): Meal | undefined {
 		return meals.find(m => m.day_of_week === dayIndex);
 	}
 	
-	function handleDaySelect(day: string) {
-		console.log('Selected:', day);
-		// TODO: Open meal selection modal
+	function handleDaySelect(dayIndex: number) {
+		selectedDayIndex = dayIndex;
+		isModalOpen = true;
 	}
+	
+	function handleCloseModal() {
+		isModalOpen = false;
+		selectedDayIndex = null;
+	}
+	
+	function handleRecipeSelect(recipe: Recipe) {
+		console.log('Selected recipe:', recipe.name, 'for day:', selectedDayName);
+		// TODO: Save meal selection to database
+		handleCloseModal();
+	}
+	
+	function handleGenerateSuggestions() {
+		console.log('Generate suggestions for day:', selectedDayName);
+		// TODO: Call API/LLM to generate suggestions
+	}
+	
+	// Temporary mock recipes for testing
+	const mockRecipes: Recipe[] = [
+		{ id: '1', household_id: '1', name: 'Spaghetti Carbonara', prep_time: 10, cook_time: 20, is_favorite: true, ingredients: [], created_at: '', updated_at: '' },
+		{ id: '2', household_id: '1', name: 'Grilled Chicken Salad', prep_time: 15, cook_time: 15, is_favorite: false, ingredients: [], created_at: '', updated_at: '' },
+		{ id: '3', household_id: '1', name: 'Beef Tacos', prep_time: 10, cook_time: 25, is_favorite: true, ingredients: [], created_at: '', updated_at: '' },
+		{ id: '4', household_id: '1', name: 'Vegetable Stir Fry', prep_time: 10, cook_time: 15, is_favorite: false, ingredients: [], created_at: '', updated_at: '' },
+		{ id: '5', household_id: '1', name: 'Homemade Pizza', prep_time: 30, cook_time: 20, is_favorite: true, ingredients: [], created_at: '', updated_at: '' },
+	];
+	
+	let displayRecipes = $derived(recipes.length > 0 ? recipes : mockRecipes);
 </script>
 
 <div class="week-view">
@@ -27,11 +64,23 @@
 			<DayCard 
 				{day} 
 				meal={getMealForDay(index)}
-				onSelect={() => handleDaySelect(day)}
+				onSelect={() => handleDaySelect(index)}
 			/>
 		{/each}
 	</div>
 </div>
+
+<Modal 
+	isOpen={isModalOpen} 
+	title={selectedDayName ? `Select Meal for ${selectedDayName}` : 'Select Meal'}
+	onClose={handleCloseModal}
+>
+	<MealSelector 
+		recipes={displayRecipes}
+		onSelect={handleRecipeSelect}
+		onGenerate={handleGenerateSuggestions}
+	/>
+</Modal>
 
 <style>
 	.week-view {

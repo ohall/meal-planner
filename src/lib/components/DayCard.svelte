@@ -15,7 +15,10 @@
 	{#if meal}
 		<div class="meal-name">{meal.recipe_id}</div>
 	{:else}
-		<div class="empty">Tap to add meal</div>
+		<div class="empty">
+			<span class="add-icon">+</span>
+			<span>Tap to add meal</span>
+		</div>
 	{/if}
 </button>
 
@@ -52,5 +55,13 @@
 		font-size: 0.875rem;
 		color: #999;
 		font-style: italic;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+	
+	.add-icon {
+		font-size: 1.25rem;
+		font-weight: 600;
 	}
 </style>
