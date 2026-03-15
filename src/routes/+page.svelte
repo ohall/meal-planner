@@ -1,5 +1,9 @@
-<script>
-	// Main page for meal planner
+<script lang="ts">
+	import WeekView from '$lib/components/WeekView.svelte';
+	import type { Meal } from '$lib/types';
+	
+	// Temporary mock data
+	const meals: Meal[] = [];
 </script>
 
 <svelte:head>
@@ -8,22 +12,5 @@
 </svelte:head>
 
 <section>
-	<h1>Meal Planner</h1>
-	<p>Welcome! Start planning your week.</p>
+	<WeekView {meals} />
 </section>
-
-<style>
-	section {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-		flex: 1;
-	}
-
-	h1 {
-		width: 100%;
-		font-size: 2rem;
-		text-align: center;
-	}
-</style>
