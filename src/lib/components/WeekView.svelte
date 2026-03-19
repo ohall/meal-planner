@@ -16,6 +16,7 @@
 	let suggestionError = $state('');
 	let suggestionCache = $state<Record<number, RecipeSuggestionsResponse>>({});
 	let hasInitialized = $state(false);
+	let poolLoadPromise: Promise<void> | null = null;
 	
 	let selectedDayName = $derived(
 		selectedDayIndex !== null ? days[selectedDayIndex] : ''
@@ -33,7 +34,7 @@
 
 	async function fetchSuggestionPayload(dayIndex: number) {
 		const response = await fetch(
-			`/api/recipes/suggestions?dayName=${encodeURIComponent(days[dayIndex] ?? 'This week')}`
+			`/api/recipes/suggestions?dayName=${encodeURIComponent(days[dayIndex] ?? 'This week')}&generatedTarget=10`
 		);
 		if (!response.ok) {
 			throw new Error('Unable to load recipes');
@@ -48,6 +49,31 @@
 			nextCache[dayIndex] = payload;
 		}
 		suggestionCache = nextCache;
+	}
+
+	async function warmSuggestionPool(forceRefresh = false) {
+		if (!forceRefresh && suggestionCache[0]) {
+			return;
+		}
+		if (poolLoadPromise && !forceRefresh) {
+			return poolLoadPromise;
+		}
+
+		poolLoadPromise = (async () => {
+			try {
+				const payload = await fetchSuggestionPayload(0);
+				cachePoolForAllDays(payload);
+				if (selectedDayIndex !== null) {
+					applySuggestionPayload(payload);
+				}
+			} catch {
+				// Keep background warm-up failures silent for better UX.
+			} finally {
+				poolLoadPromise = null;
+			}
+		})();
+
+		return poolLoadPromise;
 	}
 
 	async function loadAssignments() {
@@ -67,17 +93,25 @@
 	}
 
 	async function loadSuggestions(dayIndex: number, forceRefresh = false) {
+		if (!forceRefresh && suggestionCache[dayIndex]) {
+			loadingSuggestions = false;
+			suggestionError = '';
+			applySuggestionPayload(suggestionCache[dayIndex]);
+			// Refresh quietly in background to keep pool fresh.
+			void warmSuggestionPool();
+			return;
+		}
+
 		loadingSuggestions = true;
 		suggestionError = '';
 		try {
-			if (!forceRefresh && suggestionCache[dayIndex]) {
-				applySuggestionPayload(suggestionCache[dayIndex]);
-				return;
+			await warmSuggestionPool(forceRefresh);
+			const nextPayload = suggestionCache[dayIndex];
+			if (nextPayload) {
+				applySuggestionPayload(nextPayload);
+			} else {
+				throw new Error('Unable to load suggestions');
 			}
-
-			const payload = await fetchSuggestionPayload(0);
-			cachePoolForAllDays(payload);
-			applySuggestionPayload(payload);
 		} catch (error) {
 			suggestionError = error instanceof Error ? error.message : 'Unable to load suggestions';
 		} finally {
@@ -85,23 +119,23 @@
 		}
 	}
 
-	async function preloadSuggestions() {
-		if (suggestionCache[0]) {
+	function preloadSuggestions() {
+		if (typeof window === 'undefined') {
 			return;
 		}
 
-		try {
-			const payload = await fetchSuggestionPayload(0);
-			cachePoolForAllDays(payload);
-		} catch {
-			// Keep the background fetch silent and show errors only when selecting a day.
+		const schedule = () => void warmSuggestionPool();
+		if ('requestIdleCallback' in window) {
+			window.requestIdleCallback(schedule, { timeout: 1500 });
+			return;
 		}
+		window.setTimeout(schedule, 0);
 	}
 
-	async function handleDaySelect(dayIndex: number) {
+	function handleDaySelect(dayIndex: number) {
 		selectedDayIndex = dayIndex;
 		isModalOpen = true;
-		await loadSuggestions(dayIndex);
+		void loadSuggestions(dayIndex);
 	}
 	
 	function handleCloseModal() {

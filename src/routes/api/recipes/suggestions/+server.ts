@@ -10,13 +10,14 @@ import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ url }) => {
 	const dayName = url.searchParams.get('dayName') ?? 'Tonight';
+	const generatedTarget = Number(url.searchParams.get('generatedTarget') ?? '10');
 	const settings = await getPromptSettings();
 	const [savedRecipes, favoriteRecipes, generatedRecipes] = await Promise.all([
-		getSavedRecipeSuggestions(settings.householdId, 8, 3),
-		getFavoriteRecipeSuggestions(settings.householdId, 3),
-		generateRecipeIdeas(settings, dayName)
+		getSavedRecipeSuggestions(settings.householdId, 14, 4),
+		getFavoriteRecipeSuggestions(settings.householdId, 4),
+		generateRecipeIdeas(settings, dayName, Number.isFinite(generatedTarget) ? Math.max(3, generatedTarget) : 10)
 	]);
-	const combinedSavedRecipes = mergeRecipeSuggestions(favoriteRecipes, savedRecipes).slice(0, 8);
+	const combinedSavedRecipes = mergeRecipeSuggestions(favoriteRecipes, savedRecipes).slice(0, 14);
 	const combinedRecipes = mergeRecipeSuggestions(combinedSavedRecipes, generatedRecipes);
 	if (combinedRecipes.length === 0) {
 		console.warn(`[recipes] Empty suggestion pool for "${dayName}"`, {
@@ -29,7 +30,7 @@ export const GET: RequestHandler = async ({ url }) => {
 
 	return json({
 		dayName,
-		promptPreview: buildRecipePrompt(settings, dayName),
+		promptPreview: buildRecipePrompt(settings, dayName, Number.isFinite(generatedTarget) ? Math.max(3, generatedTarget) : 10),
 		savedRecipes: combinedSavedRecipes,
 		generatedRecipes,
 		combinedRecipes

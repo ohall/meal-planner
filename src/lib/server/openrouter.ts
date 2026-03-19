@@ -11,9 +11,9 @@ function fallbackIdeas(): RecipeSuggestion[] {
 	return [];
 }
 
-export function buildRecipePrompt(settings: PromptSettings, dayName: string) {
+export function buildRecipePrompt(settings: PromptSettings, dayName: string, targetCount = 3) {
 	return [
-		`Generate 3 family dinner ideas for ${dayName}.`,
+		`Generate ${targetCount} family dinner ideas for ${dayName}.`,
 		`Return strict JSON with an array called recipes.`,
 		`Use ${settings.servings} servings and keep prep under ${settings.maxPrepMinutes} minutes.`,
 		`Prioritize: ${settings.positivePrompts.join(', ') || 'balanced dinners'}.`,
@@ -26,7 +26,11 @@ export function buildRecipePrompt(settings: PromptSettings, dayName: string) {
 	].join(' ');
 }
 
-export async function generateRecipeIdeas(settings: PromptSettings, dayName: string) {
+export async function generateRecipeIdeas(
+	settings: PromptSettings,
+	dayName: string,
+	targetCount = 8
+) {
 	const apiKey = env.OPENROUTER_API_KEY;
 	if (!apiKey) {
 		console.warn('[recipes] OPENROUTER_API_KEY missing; generated suggestions disabled');
@@ -34,7 +38,7 @@ export async function generateRecipeIdeas(settings: PromptSettings, dayName: str
 	}
 
 	const model = env.OPENROUTER_MODEL ?? 'openai/gpt-4o-mini';
-	const prompt = buildRecipePrompt(settings, dayName);
+	const prompt = buildRecipePrompt(settings, dayName, targetCount);
 
 	let response: Response;
 	try {
